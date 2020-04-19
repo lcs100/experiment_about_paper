@@ -1,6 +1,5 @@
 import os
 import random
-import graph
 import re
 
 node_count = 16
@@ -8,9 +7,11 @@ shard_count = 4
 
 class Node:
 
-    def __init__(self, num):
-        self._id = num
-        self.next = None
+    def __init__(self, index, num, shard_index):
+        self._id = index
+        self.router = num
+        self.shard_index = shard_index
+    
 
 class Graph:
 
@@ -44,7 +45,7 @@ class Shard_graph:
         self.node_connect_shard_pair = {}
 
 def dijkstra(g, v, end):
-    vex_num = node_count
+    vex_num = int(node_count / shard_count)
     flag_list = ['False']*vex_num
     prev = [0]*vex_num
     dist = ['0'] * vex_num
@@ -123,14 +124,9 @@ if __name__ == '__main__':
     node_arr = []
     shard_arr = {}
     shard_graph_arr = {}
-    node_connect_arr = {}
-
-    ## init node
-    for i in range(node_count):
-        node_arr.append(Node(i))
+    node_connect_arr = []
 
     shard_arr = create_shard(node_count, shard_count)
-    print(shard_arr)
 
     tmp = 0
     while(tmp != shard_count):
@@ -138,15 +134,25 @@ if __name__ == '__main__':
         g = create_graph(4, 4)
         shard_graph_arr[key] = g
         tmp += 1
-    print(shard_graph_arr)
     
     ## not chongdie
+    ## node between shard
+    for i in range(shard_count):
+        key1 = 'shard_arr_' + f'{i}'
+        tmp1 = shard_arr[key1][0]
+        for j in range(i+1, shard_count):
+            key2 = 'shard_arr_' + f'{j}'
+            tmp2 = shard_arr[key2][0]
+            node_connect_arr.append((tmp1, tmp2))
     
-
-
-
+    ## init node
+    for i in range(node_count):
+        for j in range(shard_count):
+            key = f'shard_arr_{j}'
+            if(shard_arr[key].count(i) != 0):
+                n = Node(i, shard_arr[key][0], j)
+                node_arr.append(n)
     
-
     ## tx init
     tx_list = []
     count = 0
@@ -158,33 +164,62 @@ if __name__ == '__main__':
             if(count > 1000):
                 break
 
-    #graph initial
-    g_not_shard = Graph(node_count, node_count)
-    for i in range(node_count):
-        for j in range(i+1):
-            if( i == j):
-                g_not_shard.set_value(i, j, 0)
-                continue
-            tmp = random.randint(1, 10)
-            g_not_shard.set_value(i, j, tmp)
-            g_not_shard.set_value(j, i, tmp)
+    print(shard_arr)
+    # feichongdiefenpian
+    total_length = 0
+    for tx in tx_list:
+        _input = random.randint(0, node_count - 1)
+        _output = random.randint(0, node_count - 1)
 
-    #for i in range(16):
-    #    print(g_not_shard.matrix[i])
+        if(_input == _output):
+            continue
+        else:
+            print(_input)
+            print(_output)
+            input_shard = node_arr[_input].shard_index
+            output_shard = node_arr[_output].shard_index
+            print(input_shard)
+            print(output_shard)
+
+            if(input_shard == output_shard):
+                _input_graph = f'shard_graph_{input_shard}'
+                _input_shard = f'shard_arr_{input_shard}'
+                sum1 = dijkstra(shard_graph_arr[_input_graph], shard_arr[_input_shard].index(_input), shard_arr[_input_shard].index(_output))
+                total_length += sum1
+                continue
+            else:
+                _input_graph = f'shard_graph_{input_shard}'
+                _input_shard = f'shard_arr_{input_shard}'
+                
+                sum1 = sum2 = sum3 = 0
+                if(shard_arr[_input_shard].index(_input) == 0):
+                    sum1 = 1
+                else:
+                    sum1 = dijkstra(shard_graph_arr[_input_graph], 0, shard_arr[_input_shard].index(_input))
+                
+                sum2 = 1
+
+                _output_graph = f'shard_graph_{output_shard}'
+                _output_shard = f'shard_arr_{output_shard}'
+                
+                sum3 = dijkstra(shard_graph_arr[_output_graph], 0, shard_arr[_output_shard].index(_output))
+                total_length = total_length + sum1 + sum2 + sum3
+
+    print(total_length)   
 
     ## start find
-    finished_tx_list = []
+    g_not_shard = create_graph(node_count, node_count + 2)
+
     total_length = 0
     for tx in tx_list:
         _input = random.randint(0, node_count - 1)
         _output = random.randint(0, node_count - 1)
         
         if(_input == _output):
-            finished_tx_list.append(tx)
+            continue
         else:
             tmp = dijkstra(g_not_shard, _input, _output)
             total_length += tmp
-            finished_tx_list.append(tx)
     
 
     
