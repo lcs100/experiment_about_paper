@@ -75,26 +75,33 @@ def create_overlap_shard(node_arr, node_count, shard_count):
         key = 'shard_arr_' + f'{i}'
         shard_dict.setdefault(key, [])
 
-    #for i in range(shard_count):
-    #    for j in range(int(node_count / shard_count)):
-    #        key = f'shard_arr_{i}'
-    #        node_arr[]
-    #        shard_dict[key].append(node_index_arr[i*int(shard_own_node_count) + j])
+    shard_own_node_count = 2 * int(node_count / shard_count)
 
-    j = k = 0
     ## daluan
     for i in node_index_arr:
-        while(j == k):
-            j = random.randint(0, shard_count - 1)
-            k = random.randint(0, shard_count - 1)
-
-        node_arr[i].shard_index_1 = j
-        node_arr[i].shard_index_2 = k
-
+        j = random.randint(0, shard_count - 1)
         key = f'shard_arr_{j}'
-        shard_dict[key].append(i)
+
+        while len(shard_dict[key]) == shard_own_node_count:
+            j = random.randint(0, shard_count - 1) 
+            key = f'shard_arr_{j}'
+
+        shard_dict[key].append(i)    
+        node_arr[i].shard_index_1 = j
+        
+        k = random.randint(0, shard_count - 1)
+        while k == j:
+            k = random.randint(0, shard_count - 1)
+        
         key = f'shard_arr_{k}'
-        shard_dict[key].append(i)
+        while len(shard_dict[key]) == shard_own_node_count:
+            k = random.randint(0, shard_count - 1) 
+            while k == j:
+                k = random.randint(0, shard_count - 1)
+            key = f'shard_arr_{k}'
+        
+        shard_dict[key].append(i)    
+        node_arr[i].shard_index_2 = k
     
     return shard_dict
 
@@ -127,7 +134,8 @@ if __name__ == '__main__':
 
     ## init node
     for i in range(node_count):
-        
+        n = Node(i, 0, 0, 0)
+        node_arr.append(n)
 
     shard_arr = create_overlap_shard(node_arr, node_count, shard_count)
     print(shard_arr)
