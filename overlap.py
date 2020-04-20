@@ -88,21 +88,14 @@ def create_overlap_shard(node_arr, node_count, shard_count):
 
         shard_dict[key].append(i)    
         node_arr[i].shard_index_1 = j
-        
-        k = random.randint(0, shard_count - 1)
-        while k == j:
-            k = random.randint(0, shard_count - 1)
-        
-        key = f'shard_arr_{k}'
-        while len(shard_dict[key]) == shard_own_node_count:
-            k = random.randint(0, shard_count - 1) 
-            while k == j:
-                k = random.randint(0, shard_count - 1)
+
+        for k in range(shard_count):
             key = f'shard_arr_{k}'
-        
-        shard_dict[key].append(i)    
-        node_arr[i].shard_index_2 = k
-    
+            if len(shard_dict[key]) != shard_own_node_count and shard_dict[key].count(i) == 0:
+                shard_dict[key].append(i)    
+                node_arr[i].shard_index_2 = k
+                break
+
     return shard_dict
 
 def create_graph(vex_num, edge_num):
@@ -138,27 +131,14 @@ if __name__ == '__main__':
         node_arr.append(n)
 
     shard_arr = create_overlap_shard(node_arr, node_count, shard_count)
-    print(shard_arr)
-
 
     tmp = 0
+    shard_own_node_count = 2 * int(node_count / shard_count)
     while(tmp != shard_count):
         key = 'shard_graph_' + f'{tmp}'
-        g = create_graph(4, 4)
+        g = create_graph(shard_own_node_count, shard_own_node_count + 2)
         shard_graph_arr[key] = g
         tmp += 1
-    
-    ## not chongdie
-    ## node between shard
-    for i in range(shard_count):
-        key1 = 'shard_arr_' + f'{i}'
-        tmp1 = shard_arr[key1][0]
-        for j in range(i+1, shard_count):
-            key2 = 'shard_arr_' + f'{j}'
-            tmp2 = shard_arr[key2][0]
-            node_connect_arr.append((tmp1, tmp2))
-    
-
     
     ## tx init
     tx_list = []
@@ -170,7 +150,7 @@ if __name__ == '__main__':
             count += 1
             if(count > 1000):
                 break
-'''
+
     # feichongdiefenpian
     total_length = 0
     for tx in tx_list:
@@ -178,51 +158,49 @@ if __name__ == '__main__':
         _output = random.randint(0, node_count - 1)
 
         if(_input == _output):
+            total_length += 1
             continue
         else:
-            input_shard = node_arr[_input].shard_index
-            output_shard = node_arr[_output].shard_index
+            input_shard_1 = node_arr[_input].shard_index_1
+            input_shard_2 = node_arr[_input].shard_index_2
+            
+            output_shard_1 = node_arr[_output].shard_index_1
+            output_shard_2 = node_arr[_output].shard_index_2
 
-            if(input_shard == output_shard):
-                _input_graph = f'shard_graph_{input_shard}'
-                _input_shard = f'shard_arr_{input_shard}'
-                sum1 = dijkstra(shard_graph_arr[_input_graph], shard_arr[_input_shard].index(_input), shard_arr[_input_shard].index(_output), int(node_count/shard_count))
+            if input_shard_1 == output_shard_1 or input_shard_1 == output_shard_2:
+                _input_graph = f'shard_graph_{input_shard_1}'
+                _input_shard = f'shard_arr_{input_shard_1}'
+                sum1 = dijkstra(shard_graph_arr[_input_graph], shard_arr[_input_shard].index(_input), shard_arr[_input_shard].index(_output), shard_own_node_count)
+                total_length += sum1
+                continue
+            if input_shard_2 == output_shard_1 or input_shard_2 == output_shard_2:
+                _input_graph = f'shard_graph_{input_shard_2}'
+                _input_shard = f'shard_arr_{input_shard_2}'
+                sum1 = dijkstra(shard_graph_arr[_input_graph], shard_arr[_input_shard].index(_input), shard_arr[_input_shard].index(_output), shard_own_node_count)
                 total_length += sum1
                 continue
             else:
-                _input_graph = f'shard_graph_{input_shard}'
-                _input_shard = f'shard_arr_{input_shard}'
-                
-                sum1 = sum2 = sum3 = 0
-                if(shard_arr[_input_shard].index(_input) == 0):
-                    sum1 = 1
-                else:
-                    sum1 = dijkstra(shard_graph_arr[_input_graph], 0, shard_arr[_input_shard].index(_input), int(node_count/shard_count))
-                
-                sum2 = 1
+                for i in range(shard_arr[input_shard_1]):
+                    if node_arr[i].shard_index_1 == output_shard_1 or node_arr[i].shard_index_2 == output_shard_2:
+                        break
+            
+                middle_node_index = i
 
-                _output_graph = f'shard_graph_{output_shard}'
-                _output_shard = f'shard_arr_{output_shard}'
+                sum1 = sum2 = 0
+                _input_graph = f'shard_graph_{input_shard_1}'
+                _input_shard = f'shard_arr_{input_shard_1}'
+                sum1 = dijkstra(shard_graph_arr[_input_graph], shard_arr[_input_shard].index(_input), middle_node_index, shard_own_node_count)
                 
-                sum3 = dijkstra(shard_graph_arr[_output_graph], 0, shard_arr[_output_shard].index(_output), int(node_count/shard_count))
-                total_length = total_length + sum1 + sum2 + sum3
+                if node_arr[middle_node_index].shard_index_1 == output_shard_1:
+                    _output_graph = f'shard_graph_{output_shard_1}'
+                    _output_shard = f'shard_arr{output_shard_1}'
+                    sum2 = dijkstra(shard_graph_arr[_output_graph], shard_arr[_output_graph].index(_output), middle_node_index, shard_own_node_count)
+                
+                if node_arr[middle_node_index].shard_index_2 == output_shard_2:
+                    _output_graph = f'shard_graph_{output_shard_2}'
+                    _output_shard = f'shard_arr{output_shard_2}'
+                    sum2 = dijkstra(shard_graph_arr[_output_graph], shard_arr[_output_graph].index(_output), middle_node_index, shard_own_node_count)
+                
+                total_length = total_length + sum1 + sum2
 
     print(total_length)   
-
-    ## start find
-    g_not_shard = create_graph(node_count, node_count + 2)
-
-    total_length = 0
-    for tx in tx_list:
-        _input = random.randint(0, node_count - 1)
-        _output = random.randint(0, node_count - 1)
-        
-        if(_input == _output):
-            total_length += 1
-        else:
-            tmp = dijkstra(g_not_shard, _input, _output, node_count)
-            total_length += tmp
-    
-    print(total_length)
-'''    
-    ## chongdie fenpian
