@@ -5,13 +5,15 @@ import re
 node_count = 16
 shard_count = 4
 MAX_VALUE = 10000
+
 class Node:
 
-    def __init__(self, index, num, shard_index):
+    def __init__(self, index, num, shard_index_1, shard_index_2):
         self._id = index
         self.router = num
-        self.shard_index = shard_index
-    
+        self.shard_index_1 = shard_index_1
+        self.shard_index_2 = shard_index_2
+  
 class Graph:
 
     def __init__(self, row, col):
@@ -26,7 +28,6 @@ class Graph:
     def set_value(self, row, col, val):
         self.matrix[row][col] = val
         self.matrix[col][row] = val
-
 
 def dijkstra(g, v, end, node_count):
     vex_num = node_count
@@ -64,7 +65,7 @@ def dijkstra(g, v, end, node_count):
         if( i == end):
             return dist[i]
 
-def create_shard(node_count, shard_count):
+def create_overlap_shard(node_arr, node_count, shard_count):
     node_index_arr = list(range(0, node_count))
     shard_dict = {}
     ## daluan fenpei
@@ -73,12 +74,27 @@ def create_shard(node_count, shard_count):
     for i in range(shard_count):
         key = 'shard_arr_' + f'{i}'
         shard_dict.setdefault(key, [])
-    
-    shard_own_node_count = node_count / shard_count
-    for i in range(shard_count):
-        for j in range(int(shard_own_node_count)):
-            key = 'shard_arr_' + f'{i}'
-            shard_dict[key].append(node_index_arr[i*int(shard_own_node_count) + j])
+
+    #for i in range(shard_count):
+    #    for j in range(int(node_count / shard_count)):
+    #        key = f'shard_arr_{i}'
+    #        node_arr[]
+    #        shard_dict[key].append(node_index_arr[i*int(shard_own_node_count) + j])
+
+    j = k = 0
+    ## daluan
+    for i in node_index_arr:
+        while(j == k):
+            j = random.randint(0, shard_count - 1)
+            k = random.randint(0, shard_count - 1)
+
+        node_arr[i].shard_index_1 = j
+        node_arr[i].shard_index_2 = k
+
+        key = f'shard_arr_{j}'
+        shard_dict[key].append(i)
+        key = f'shard_arr_{k}'
+        shard_dict[key].append(i)
     
     return shard_dict
 
@@ -103,14 +119,19 @@ def create_graph(vex_num, edge_num):
 
     return g_graph
     
-
 if __name__ == '__main__':
     node_arr = []
     shard_arr = {}
     shard_graph_arr = {}
     node_connect_arr = []
 
-    shard_arr = create_shard(node_count, shard_count)
+    ## init node
+    for i in range(node_count):
+        
+
+    shard_arr = create_overlap_shard(node_arr, node_count, shard_count)
+    print(shard_arr)
+
 
     tmp = 0
     while(tmp != shard_count):
@@ -129,13 +150,7 @@ if __name__ == '__main__':
             tmp2 = shard_arr[key2][0]
             node_connect_arr.append((tmp1, tmp2))
     
-    ## init node
-    for i in range(node_count):
-        for j in range(shard_count):
-            key = f'shard_arr_{j}'
-            if(shard_arr[key].count(i) != 0):
-                n = Node(i, shard_arr[key][0], j)
-                node_arr.append(n)
+
     
     ## tx init
     tx_list = []
@@ -147,7 +162,7 @@ if __name__ == '__main__':
             count += 1
             if(count > 1000):
                 break
-
+'''
     # feichongdiefenpian
     total_length = 0
     for tx in tx_list:
@@ -201,4 +216,5 @@ if __name__ == '__main__':
             total_length += tmp
     
     print(total_length)
-    
+'''    
+    ## chongdie fenpian
