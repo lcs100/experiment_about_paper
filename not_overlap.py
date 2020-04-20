@@ -27,7 +27,6 @@ class Graph:
         self.matrix[row][col] = val
         self.matrix[col][row] = val
 
-
 def dijkstra(g, v, end, node_count):
     vex_num = node_count
     flag_list = ['False']*vex_num

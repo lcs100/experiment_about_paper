@@ -80,6 +80,7 @@ def create_overlap_shard(node_arr, node_count, shard_count):
         for j in range(int(node_count/shard_count)):
             key = f'shard_arr_{i}'
             shard_dict[key].append(node_index_arr[i*int(node_count/shard_count) + j])
+            node_arr[node_index_arr[i*int(node_count/shard_count) + j]].shard_index_1 = i
     
     node_index_arr_re = list(reversed(node_index_arr))
     
@@ -87,7 +88,16 @@ def create_overlap_shard(node_arr, node_count, shard_count):
         for j in range(int(node_count/shard_count)):
             key = f'shard_arr_{i}'
             shard_dict[key].append(node_index_arr_re[i*int(node_count/shard_count) + j])
+            node_arr[node_index_arr_re[i*int(node_count/shard_count) + j]].shard_index_2 = i
 
+    for i in range(int(node_count/shard_count)):
+        tmp = shard_dict['shard_arr_0'][i]
+        shard_dict['shard_arr_0'][i] = shard_dict['shard_arr_1'][i]
+        shard_dict['shard_arr_1'][i] = tmp
+        node_arr[shard_dict['shard_arr_0'][i]].shard_index_1 = 0
+        node_arr[shard_dict['shard_arr_1'][i]].shard_index_1 = 1
+
+    print(shard_dict)
     return shard_dict
 
 def create_graph(vex_num, edge_num):
@@ -128,7 +138,7 @@ if __name__ == '__main__':
     shard_own_node_count = 2 * int(node_count / shard_count)
     while(tmp != shard_count):
         key = 'shard_graph_' + f'{tmp}'
-        g = create_graph(shard_own_node_count, shard_own_node_count + 2)
+        g = create_graph(shard_own_node_count, shard_own_node_count)
         shard_graph_arr[key] = g
         tmp += 1
     
@@ -143,7 +153,6 @@ if __name__ == '__main__':
             if(count > 1000):
                 break
 
-    print(shard_arr)
     # feichongdiefenpian
     total_length = 0
     for tx in tx_list:
@@ -160,7 +169,6 @@ if __name__ == '__main__':
             output_shard_1 = node_arr[_output].shard_index_1
             output_shard_2 = node_arr[_output].shard_index_2
 
-            print("%d   %d  %d  %d  %d  %d"%(_input, _output, input_shard_1, input_shard_2, output_shard_1, output_shard_2))
 
             if input_shard_1 == output_shard_1 or input_shard_1 == output_shard_2:
                 _input_graph = f'shard_graph_{input_shard_1}'
@@ -182,21 +190,22 @@ if __name__ == '__main__':
                         break
             
                 middle_node_index = i
-
                 sum1 = sum2 = 0
+
                 _input_graph = f'shard_graph_{input_shard_1}'
                 _input_shard = f'shard_arr_{input_shard_1}'
-                sum1 = dijkstra(shard_graph_arr[_input_graph], shard_arr[_input_shard].index(_input), middle_node_index, shard_own_node_count)
+                
+                sum1 = dijkstra(shard_graph_arr[_input_graph], shard_arr[_input_shard].index(_input), shard_arr[_input_shard].index(middle_node_index), shard_own_node_count)
                 
                 if node_arr[middle_node_index].shard_index_1 == output_shard_1:
                     _output_graph = f'shard_graph_{output_shard_1}'
                     _output_shard = f'shard_arr_{output_shard_1}'
-                    sum2 = dijkstra(shard_graph_arr[_output_graph], shard_arr[_output_shard].index(_output), middle_node_index, shard_own_node_count)
+                    sum2 = dijkstra(shard_graph_arr[_output_graph], shard_arr[_output_shard].index(_output), shard_arr[_output_shard].index(middle_node_index), shard_own_node_count)
                 
                 if node_arr[middle_node_index].shard_index_2 == output_shard_2:
                     _output_graph = f'shard_graph_{output_shard_2}'
                     _output_shard = f'shard_arr_{output_shard_2}'
-                    sum2 = dijkstra(shard_graph_arr[_output_graph], shard_arr[_output_shard].index(_output), middle_node_index, shard_own_node_count)
+                    sum2 = dijkstra(shard_graph_arr[_output_graph], shard_arr[_output_shard].index(_output), shard_arr[_output_shard].index(middle_node_index), shard_own_node_count)
                 
                 total_length = total_length + sum1 + sum2
 
