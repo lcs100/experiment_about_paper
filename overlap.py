@@ -104,7 +104,7 @@ def create_graph(vex_num, edge_num):
     if(edge_num < vex_num):
         return False
 
-    if(2 * edge_num > vex_num*(vex_num - 1)):
+    if(2*edge_num < (vex_num - 1) * (vex_num - 2) + 2):
         return False
 
     g_graph = Graph(vex_num, vex_num)
@@ -138,7 +138,7 @@ if __name__ == '__main__':
     shard_own_node_count = 2 * int(node_count / shard_count)
     while(tmp != shard_count):
         key = 'shard_graph_' + f'{tmp}'
-        g = create_graph(shard_own_node_count, shard_own_node_count)
+        g = create_graph(shard_own_node_count, 22)
         shard_graph_arr[key] = g
         tmp += 1
     
@@ -150,7 +150,7 @@ if __name__ == '__main__':
             _str = ''.join(line)[3:9]
             tx_list.append(_str)
             count += 1
-            if(count > 1000):
+            if(count > 10000000):
                 break
 
     # feichongdiefenpian

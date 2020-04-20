@@ -4,7 +4,7 @@ import re
 
 node_count = 16
 shard_count = 4
-MAX_VALUE = 10000
+MAX_VALUE = -1
 class Node:
 
     def __init__(self, index, num, shard_index):
@@ -85,7 +85,7 @@ def create_graph(vex_num, edge_num):
     if(edge_num < vex_num):
         return False
 
-    if(2 * edge_num > vex_num*(vex_num - 1)):
+    if(2*edge_num < (vex_num - 1) * (vex_num - 2) + 2):
         return False
 
     g_graph = Graph(vex_num, vex_num)
@@ -93,6 +93,7 @@ def create_graph(vex_num, edge_num):
     while(edge_num != 0):
         j = random.randint(0, vex_num - 1)
         k = random.randint(0, vex_num - 1)
+
         if(j == k):
             continue
         if(g_graph.matrix[j][k] == 1):
@@ -144,7 +145,7 @@ if __name__ == '__main__':
             _str = ''.join(line)[3:9]
             tx_list.append(_str)
             count += 1
-            if(count > 1000):
+            if(count > 10000000):
                 break
 
     # feichongdiefenpian
@@ -186,8 +187,8 @@ if __name__ == '__main__':
     print(total_length)   
 
     ## start find
-    g_not_shard = create_graph(node_count, node_count + 2)
-
+    g_not_shard = create_graph(node_count, 106)
+    
     total_length = 0
     for tx in tx_list:
         _input = random.randint(0, node_count - 1)
@@ -196,8 +197,9 @@ if __name__ == '__main__':
         if(_input == _output):
             total_length += 1
         else:
-            tmp = dijkstra(g_not_shard, _input, _output, node_count)
-            total_length += tmp
+            sum1 = dijkstra(g_not_shard, 0, _input, node_count)
+            sum2 = dijkstra(g_not_shard, 0, _output, node_count)
+            total_length = total_length + sum1 + sum2
     
     print(total_length)
     

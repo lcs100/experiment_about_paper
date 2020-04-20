@@ -62,13 +62,13 @@ def main_test_func(vex_num=10):
     '''
     start_time=time.time()
     data_matrix=random_matrix_genetor(vex_num)
-    dijkstra(data_matrix,0)
+    dijkstra(data_matrix,1)
     end_time=time.time()
     return end_time-start_time
 
 if __name__ == '__main__':
     data_matrix=[[0,2,3,MAX_VALUE],[2,0,MAX_VALUE,5],[3,MAX_VALUE,0,9],[MAX_VALUE,5,9,0]]
-    dijkstra(data_matrix, 0)
+    dijkstra(data_matrix, 1)
     time_list=[]
     print ('----------------------------10顶点测试-------------------------------------')
     time10=main_test_func(10)
