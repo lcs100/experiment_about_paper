@@ -1,6 +1,7 @@
 import os
 import random
 import re
+import threading
 
 node_count = 16
 shard_count = 4
@@ -103,52 +104,7 @@ def create_graph(vex_num, edge_num):
 
     return g_graph
     
-
-if __name__ == '__main__':
-    node_arr = []
-    shard_arr = {}
-    shard_graph_arr = {}
-    node_connect_arr = []
-
-    shard_arr = create_shard(node_count, shard_count)
-
-    tmp = 0
-    while(tmp != shard_count):
-        key = 'shard_graph_' + f'{tmp}'
-        g = create_graph(4, 4)
-        shard_graph_arr[key] = g
-        tmp += 1
-    
-    ## not chongdie
-    ## node between shard
-    for i in range(shard_count):
-        key1 = 'shard_arr_' + f'{i}'
-        tmp1 = shard_arr[key1][0]
-        for j in range(i+1, shard_count):
-            key2 = 'shard_arr_' + f'{j}'
-            tmp2 = shard_arr[key2][0]
-            node_connect_arr.append((tmp1, tmp2))
-    
-    ## init node
-    for i in range(node_count):
-        for j in range(shard_count):
-            key = f'shard_arr_{j}'
-            if(shard_arr[key].count(i) != 0):
-                n = Node(i, shard_arr[key][0], j)
-                node_arr.append(n)
-    
-    ## tx init
-    tx_list = []
-    count = 0
-    with open('res.txt') as f:
-        for line in f.readlines():
-            _str = ''.join(line)[3:9]
-            tx_list.append(_str)
-            count += 1
-            if(count > 10000000):
-                break
-
-    # feichongdiefenpian
+def run(tx_list, node_arr, shard_graph_arr, shard_arr):
     total_length = 0
     for tx in tx_list:
         _input = random.randint(0, node_count - 1)
@@ -184,24 +140,65 @@ if __name__ == '__main__':
                 sum3 = dijkstra(shard_graph_arr[_output_graph], 0, shard_arr[_output_shard].index(_output), int(node_count/shard_count))
                 total_length = total_length + sum1 + sum2 + sum3
 
-    print(total_length)   
+    print(total_length)
 
-    ## start find
-    g_not_shard = create_graph(node_count, 106)
+if __name__ == '__main__':
+    node_arr = []
+    shard_arr = {}
+    shard_graph_arr = {}
+    node_connect_arr = []
+
+    shard_arr = create_shard(node_count, shard_count)
+
+    tmp = 0
+    while(tmp != shard_count):
+        key = 'shard_graph_' + f'{tmp}'
+        g = create_graph(4, 4)
+        shard_graph_arr[key] = g
+        tmp += 1
+    
+    ## not chongdie
+    ## node between shard
+    for i in range(shard_count):
+        key1 = 'shard_arr_' + f'{i}'
+        tmp1 = shard_arr[key1][0]
+        for j in range(i+1, shard_count):
+            key2 = 'shard_arr_' + f'{j}'
+            tmp2 = shard_arr[key2][0]
+            node_connect_arr.append((tmp1, tmp2))
+    
+    ## init node
+    for i in range(node_count):
+        for j in range(shard_count):
+            key = f'shard_arr_{j}'
+            if(shard_arr[key].count(i) != 0):
+                n = Node(i, shard_arr[key][0], j)
+                node_arr.append(n)
+    
+    ## tx init
+    tx_dict = {}
+    for i in range(shard_count):
+        key = f'{i}'
+        tx_dict.setdefault(key, [])
+    
+    i = 0
+    with open('res.txt') as f:
+        for line in f.readlines():
+            _str = ''.join(line)[3:9]
+            key = f'{i}'
+            if(len(tx_dict[key]) < 10000):
+                tx_dict[key].append(_str)
+            else:
+                i += 1
+            if(i >= shard_count):
+                break
     
     total_length = 0
-    for tx in tx_list:
-        _input = random.randint(0, node_count - 1)
-        _output = random.randint(0, node_count - 1)
-        
-        if(_input == _output):
-            total_length += 1
-        else:
-            sum1 = dijkstra(g_not_shard, 0, _input, node_count)
-            sum2 = dijkstra(g_not_shard, 0, _output, node_count)
-            total_length = total_length + sum1 + sum2
-    
-    print(total_length)
-    
-    ## chongdie fenpian
+    threads = []
+    for i in range(shard_count):
+        key = f'{i}'
+        t = threading.Thread(target=run, args=(tx_dict[key], node_arr, shard_graph_arr, shard_arr))
+        threads.append(t)
+        t.start()
+        t.join()
     

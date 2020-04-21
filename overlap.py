@@ -1,6 +1,7 @@
 import os
 import random
 import re
+import threading
 
 node_count = 16
 shard_count = 4
@@ -97,7 +98,6 @@ def create_overlap_shard(node_arr, node_count, shard_count):
         node_arr[shard_dict['shard_arr_0'][i]].shard_index_1 = 0
         node_arr[shard_dict['shard_arr_1'][i]].shard_index_1 = 1
 
-    print(shard_dict)
     return shard_dict
 
 def create_graph(vex_num, edge_num):
@@ -120,40 +120,8 @@ def create_graph(vex_num, edge_num):
         edge_num -= 1
 
     return g_graph
-    
-if __name__ == '__main__':
-    node_arr = []
-    shard_arr = {}
-    shard_graph_arr = {}
-    node_connect_arr = []
 
-    ## init node
-    for i in range(node_count):
-        n = Node(i, 0, 0, 0)
-        node_arr.append(n)
-
-    shard_arr = create_overlap_shard(node_arr, node_count, shard_count)
-
-    tmp = 0
-    shard_own_node_count = 2 * int(node_count / shard_count)
-    while(tmp != shard_count):
-        key = 'shard_graph_' + f'{tmp}'
-        g = create_graph(shard_own_node_count, 22)
-        shard_graph_arr[key] = g
-        tmp += 1
-    
-    ## tx init
-    tx_list = []
-    count = 0
-    with open('res.txt') as f:
-        for line in f.readlines():
-            _str = ''.join(line)[3:9]
-            tx_list.append(_str)
-            count += 1
-            if(count > 10000000):
-                break
-
-    # feichongdiefenpian
+def run(tx_list, node_arr, shard_graph_arr, shard_arr, shard_own_node_count):
     total_length = 0
     for tx in tx_list:
         _input = random.randint(0, node_count - 1)
@@ -210,3 +178,53 @@ if __name__ == '__main__':
                 total_length = total_length + sum1 + sum2
 
     print(total_length)   
+
+
+if __name__ == '__main__':
+    node_arr = []
+    shard_arr = {}
+    shard_graph_arr = {}
+    node_connect_arr = []
+
+    ## init node
+    for i in range(node_count):
+        n = Node(i, 0, 0, 0)
+        node_arr.append(n)
+
+    shard_arr = create_overlap_shard(node_arr, node_count, shard_count)
+
+    tmp = 0
+    shard_own_node_count = 2 * int(node_count / shard_count)
+    while(tmp != shard_count):
+        key = 'shard_graph_' + f'{tmp}'
+        g = create_graph(shard_own_node_count, 22)
+        shard_graph_arr[key] = g
+        tmp += 1
+    
+    ## tx init
+    tx_dict = {}
+    for i in range(shard_count):
+        key = f'{i}'
+        tx_dict.setdefault(key, [])
+    
+    i = 0
+    with open('res.txt') as f:
+        for line in f.readlines():
+            _str = ''.join(line)[3:9]
+            key = f'{i}'
+            if(len(tx_dict[key]) < 10000):
+                tx_dict[key].append(_str)
+            else:
+                i += 1
+            if(i >= shard_count):
+                break
+
+    total_length = 0
+    threads = []
+    for i in range(shard_count):
+        key = f'{i}'
+        t = threading.Thread(target=run, args=(tx_dict[key], node_arr, shard_graph_arr, shard_arr, shard_own_node_count))
+        threads.append(t)
+        t.start()
+        t.join()
+    
