@@ -1,9 +1,10 @@
 import os
 import random
 import re
+import time
 
-node_count = 16
-shard_count = 4
+node_count = 64
+shard_count = 8
 MAX_VALUE = -1
 class Node:
 
@@ -149,9 +150,11 @@ if __name__ == '__main__':
                 break
 
     ## start find
-    g_not_shard = create_graph(node_count, 106)
+    edge_num = int((node_count - 1)*(node_count - 2)/2) + 1
+    g_not_shard = create_graph(node_count, edge_num)
     
     total_length = 0
+    start = time.time()
     for tx in tx_list:
         _input = random.randint(0, node_count - 1)
         _output = random.randint(0, node_count - 1)
@@ -162,5 +165,7 @@ if __name__ == '__main__':
             sum = dijkstra(g_not_shard, _input, _output, node_count)
             total_length += sum
     
+    end = time.time()
     print(total_length)
+    print("Execution Time: ", end - start)
     

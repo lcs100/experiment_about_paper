@@ -9,6 +9,3 @@ for block in blockchain.get_unordered_blocks():
         print("tx=%s" % (tx.hash))
 
 
-
-
-

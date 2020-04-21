@@ -2,10 +2,11 @@ import os
 import random
 import re
 import threading
+import time
 
-node_count = 16
-shard_count = 4
-MAX_VALUE = 10000
+node_count = 64
+shard_count = 8
+MAX_VALUE = -1
 
 class Node:
 
@@ -197,7 +198,8 @@ if __name__ == '__main__':
     shard_own_node_count = 2 * int(node_count / shard_count)
     while(tmp != shard_count):
         key = 'shard_graph_' + f'{tmp}'
-        g = create_graph(shard_own_node_count, 22)
+        edge_num = int((shard_own_node_count - 1)*(shard_own_node_count - 2)/2) + 1
+        g = create_graph(shard_own_node_count, edge_num)
         shard_graph_arr[key] = g
         tmp += 1
     
@@ -221,10 +223,12 @@ if __name__ == '__main__':
 
     total_length = 0
     threads = []
+    start = time.time()
     for i in range(shard_count):
         key = f'{i}'
         t = threading.Thread(target=run, args=(tx_dict[key], node_arr, shard_graph_arr, shard_arr, shard_own_node_count))
         threads.append(t)
         t.start()
         t.join()
-    
+    end = time.time()
+    print("Execution Time: ", end - start)
