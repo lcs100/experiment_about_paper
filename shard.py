@@ -4,8 +4,8 @@ import re
 import threading
 import time
 
-node_count = 64
-shard_count = 8
+node_count = 16
+shard_count = 4
 MAX_VALUE = -1
 class Node:
 
@@ -189,7 +189,7 @@ if __name__ == '__main__':
         for line in f.readlines():
             _str = ''.join(line)[3:9]
             key = f'{i}'
-            if(len(tx_dict[key]) < 10000):
+            if(len(tx_dict[key]) < 100000):
                 tx_dict[key].append(_str)
             else:
                 i += 1

@@ -4,8 +4,8 @@ import re
 import threading
 import time
 
-node_count = 64
-shard_count = 8
+node_count = 4096
+shard_count = 16
 MAX_VALUE = -1
 
 class Node:
